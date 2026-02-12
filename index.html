@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valentine Cats for GIAN</title>
+
+    <style>
+      :root {
+        --pink1: #fce4ec;
+        --pink2: #f8bbd0;
+        --dark: #c2185b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100vh;
+        background: linear-gradient(135deg, var(--pink1), var(--pink2));
+        font-family: "Segoe UI", sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+
+      body::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(255, 255, 255, 0.4),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .message-container {
+        z-index: 20;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .message {
+        font-size: clamp(1.5rem, 6vw, 3rem);
+        color: var(--dark);
+        font-weight: 800;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+      }
+
+      .floating-cat {
+        position: absolute;
+        width: clamp(150px, 28vw, 220px);
+        height: clamp(150px, 28vw, 220px);
+        object-fit: cover;
+        opacity: 0;
+        transform: scale(0);
+        pointer-events: none;
+        border-radius: 20px;
+      }
+
+      @keyframes popZoom {
+        0% {
+          transform: scale(0);
+          opacity: 0;
+        }
+        20% {
+          transform: scale(1.3);
+          opacity: 1;
+        }
+        80% {
+          transform: scale(1.3);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(0);
+          opacity: 0;
+        }
+      }
+
+      .paw {
+        position: absolute;
+        font-size: clamp(12px, 3vw, 18px);
+        opacity: 0.7;
+        animation: floatUp linear infinite;
+      }
+
+      @keyframes floatUp {
+        from {
+          transform: translateY(100vh);
+        }
+        to {
+          transform: translateY(-10vh);
+        }
+      }
+
+      .logo {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        font-size: clamp(24px, 6vw, 36px);
+        animation: logoFloat 3s ease-in-out infinite;
+      }
+
+      @keyframes logoFloat {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+
+      /* Cat button */
+      #startBtn {
+        z-index: 30;
+        padding: 15px 20px;
+        font-size: 2rem;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: var(--dark);
+        transition: transform 0.2s;
+      }
+
+      #startBtn:hover {
+        transform: scale(1.2);
+      }
+
+      @media (max-width: 480px) {
+        .logo {
+          bottom: 10px;
+          right: 10px;
+        }
+        #startBtn {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="message-container">
+      <div class="message" id="message"></div>
+      <button id="startBtn">🐱 Click Me!</button>
+    </div>
+
+    <!-- 4 Bigger Cats -->
+    <img class="floating-cat" />
+    <img class="floating-cat" />
+    <img class="floating-cat" />
+    <img class="floating-cat" />
+
+    <!-- Floating Cat Logo -->
+    <div class="logo">🐱</div>
+
+    <!-- Audio -->
+    <audio id="valentineSound" src="valentine.mp3" preload="auto" loop></audio>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const messageEl = document.getElementById("message");
+        const cats = document.querySelectorAll(".floating-cat");
+        const startBtn = document.getElementById("startBtn");
+        const sound = document.getElementById("valentineSound");
+        const fullMessage = "Happy Valentine’s Day!\n— from the cats 🐾";
+        let i = 0;
+
+        // Floating paws
+        function createPaws() {
+          for (let i = 0; i < 25; i++) {
+            const paw = document.createElement("div");
+            paw.className = "paw";
+            paw.textContent = "🐾";
+            paw.style.left = Math.random() * 100 + "vw";
+            paw.style.animationDuration = 5 + Math.random() * 5 + "s";
+            paw.style.fontSize = 10 + Math.random() * 15 + "px";
+            document.body.appendChild(paw);
+          }
+        }
+
+        // Typing effect
+        function type() {
+          if (i < fullMessage.length) {
+            messageEl.innerHTML +=
+              fullMessage.charAt(i) === "\n" ? "<br/>" : fullMessage.charAt(i);
+            i++;
+            setTimeout(type, 70);
+          } else {
+            startLoop();
+          }
+        }
+
+        // Random cat image
+        function randomCat(img) {
+          img.src =
+            "https://cataas.com/cat?width=400&height=400&t=" +
+            Date.now() +
+            Math.random();
+        }
+
+        // Non-overlapping positions
+        function generatePosition(existing, size) {
+          let x, y, overlap;
+          do {
+            overlap = false;
+            x = Math.random() * (window.innerWidth - size);
+            y = Math.random() * (window.innerHeight - size);
+            for (let pos of existing) {
+              const dx = x - pos.x;
+              const dy = y - pos.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              if (distance < size) {
+                overlap = true;
+                break;
+              }
+            }
+          } while (overlap);
+          return { x, y };
+        }
+
+        // Animate cats
+        function animateCats() {
+          let usedPositions = [];
+          cats.forEach((cat, index) => {
+            setTimeout(() => {
+              const size = cat.offsetWidth;
+              const pos = generatePosition(usedPositions, size);
+              usedPositions.push(pos);
+              cat.style.left = pos.x + "px";
+              cat.style.top = pos.y + "px";
+              randomCat(cat);
+              cat.style.animation = "none";
+              void cat.offsetWidth;
+              cat.style.animation = "popZoom 3s ease-in-out forwards";
+            }, index * 800);
+          });
+        }
+
+        function startLoop() {
+          animateCats();
+          setInterval(animateCats, 5000);
+        }
+
+        // Start button click
+        startBtn.addEventListener("click", () => {
+          startBtn.style.display = "none"; // hide button
+          sound.volume = 0.3;
+          sound.play().catch((e) => console.log("Autoplay blocked"));
+          createPaws();
+          type();
+        });
+      });
+    </script>
+  </body>
+</html>
